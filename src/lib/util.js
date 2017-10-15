@@ -1,5 +1,4 @@
 // DEPENDENCIES
-import _ from 'ramda';
 import AWS from 'aws-sdk';
 import {extname} from 'path';
 import fs from 'fs-extra';
@@ -41,7 +40,6 @@ export const each = (list, cb) =>
   Array.prototype.forEach.call(list, cb);
 
 export const removeMulterFile = (data) => fs.remove(data.path);
-
 export const removeMulterFiles = (list) => Promise.all(list.map(removeMulterFile));
 
 export const s3UploadMulterFileAndClean = (data) => {
@@ -51,18 +49,14 @@ export const s3UploadMulterFileAndClean = (data) => {
     Key: `${data.filename}.${data.originalname}`,
     Body: fs.createReadStream(data.path),
   }).promise()
+  // allways remove file and either pass on failure or success
   .catch(err => fs.remove(data.path).then(() => {throw err;}))
   .then(s3Data => fs.remove(data.path).then(() => s3Data));
 };
 
-export const s3DeletePhotoFromURL = (url) => {
-  let [Key] = url.split('/').slice(-1);
-  return s3.deleteObject({ Key, Bucket: process.env.AWS_BUCKET}).promise();
-};
-
 export const pagerCreate = (model, populate='') => (req, query={}) => {
   let offset = (Number(req.query.page) - 1) || 0;
-  let itemLimit = 100;
+  let itemLimit = 5;
   let route = `${process.env.API_URL}/${model.modelName}s?page=`;
   return model.count()
   .then(count => {
